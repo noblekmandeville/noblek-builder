@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NoblekBuilder</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#0f0f0e;--surface:#1a1917;--surface2:#242320;--surface3:#2e2d2a;--border:#2e2d2a;--accent:#e8a020;--text:#f0ede8;--muted:#7a7670;--green:#4caf76;--red:#e05252;--blue:#4a9eff;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;}
+
+#dashView{display:flex;flex-direction:column;min-height:100vh;}
+#dashView.hidden{display:none;}
+.dash-header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:56px;}
+.logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;letter-spacing:2px;color:var(--accent);}
+.logo span{color:var(--text);}
+.dash-body{flex:1;padding:36px 32px;max-width:1100px;margin:0 auto;width:100%;}
+.dash-ttl{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;letter-spacing:1px;margin-bottom:4px;}
+.dash-sub{color:var(--muted);font-size:13px;margin-bottom:28px;}
+.dash-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
+.proj-card{background:var(--surface);border:1px solid var(--border);padding:18px;cursor:pointer;transition:all .15s;position:relative;}
+.proj-card:hover{border-color:var(--accent);background:var(--surface2);}
+.proj-card.mine{border-top:2px solid var(--accent);}
+.proj-card.shared{border-top:2px solid var(--blue);}
+.pc-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
+.pc-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:17px;line-height:1.2;}
+.pc-badge{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 6px;}
+.pc-badge.mine{background:rgba(232,160,32,.15);color:var(--accent);}
+.pc-badge.shared{background:rgba(74,158,255,.15);color:var(--blue);}
+.pc-date{font-size:11px;color:var(--muted);margin-bottom:10px;}
+.pc-total{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:24px;color:var(--accent);}
+.pc-total-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.pc-footer{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:10px;border-top:1px solid var(--border);}
+.pc-user{font-size:11px;color:var(--muted);}
+.pc-del{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:3px 6px;}
+.pc-del:hover{color:var(--red);}
+.new-proj-card{background:none;border:2px dashed var(--border);padding:18px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:160px;color:var(--muted);}
+.new-proj-card:hover{border-color:var(--accent);color:var(--accent);}
+.new-proj-ico{font-size:28px;}
+.new-proj-lbl{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;}
+
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 18px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100;}
+.proj-wrap{display:flex;align-items:center;gap:8px;}
+.proj-lbl{font-size:10px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;}
+.proj-inp{background:none;border:none;border-bottom:1px solid var(--border);color:var(--text);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;padding:2px 6px;outline:none;width:200px;}
+.proj-inp:focus{border-bottom-color:var(--accent);}
+.hdr-r{display:flex;align-items:center;gap:7px;}
+.as{display:flex;align-items:center;gap:5px;font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+.as-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);transition:background .3s;}
+.as-dot.saved{background:var(--green);}
+.as-dot.saving{background:var(--accent);animation:blink .6s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:6px 11px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+.btn.ac{background:var(--accent);color:#000;border-color:var(--accent);}
+.btn.ac:hover{background:#f5b030;}
+.btn.gr{background:var(--green);color:#000;border-color:var(--green);}
+.btn.gr:hover{background:#5dc988;}
+.btn-back{background:none;border:none;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;gap:5px;padding:4px 8px;}
+.btn-back:hover{color:var(--text);}
+
+#appView{display:none;flex-direction:column;min-height:100vh;}
+#appView.visible{display:flex;}
+.app{display:flex;min-height:calc(100vh - 52px);}
+.leftnav{width:185px;min-width:185px;background:var(--surface);border-right:1px solid var(--border);padding:16px 0;}
+.nav-lbl{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:10px 15px 5px;}
+.nav-btn{display:flex;align-items:center;gap:8px;background:none;border:none;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:8px 15px;text-align:left;cursor:pointer;border-left:3px solid transparent;transition:all .1s;width:100%;}
+.nav-btn:hover{background:var(--surface2);color:var(--accent);}
+.nav-btn.active{border-left-color:var(--accent);background:var(--surface2);color:var(--accent);font-weight:500;}
+.nav-div{border:none;border-top:1px solid var(--border);margin:8px 0;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.tab{display:none;flex:1;overflow-y:auto;padding:20px 24px;}
+.tab.active{display:block;}
+.sec-ttl{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+.sec-sub{font-size:12px;color:var(--muted);margin-bottom:16px;}
+
+.est-sec{margin-bottom:22px;}
+.est-hdr{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;user-select:none;}
+.est-hdr:hover{background:var(--surface3);}
+.est-hdr-ttl{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+.est-tot{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--accent);}
+.est-tog{color:var(--muted);font-size:11px;margin-left:8px;}
+.est-body{border:1px solid var(--border);border-top:none;}
+.est-body.collapsed{display:none;}
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{background:var(--bg);padding:6px 10px;text-align:left;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--surface2);}
+.ii{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:12px;padding:4px 7px;outline:none;width:100%;transition:border-color .15s;}
+.ii:focus{border-color:var(--accent);}
+.ii.sm{width:58px;text-align:center;}
+.ii.pr{width:88px;text-align:right;}
+.ii.mu{color:var(--muted);font-size:11px;}
+.cell-tot{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text);text-align:right;white-space:nowrap;}
+.del{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:3px;}
+.del:hover{color:var(--red);}
+.add-row{display:flex;align-items:center;gap:7px;background:none;border:none;border-top:1px dashed var(--border);color:var(--muted);font-family:'Barlow',sans-serif;font-size:12px;padding:8px 12px;cursor:pointer;width:100%;transition:all .1s;}
+.add-row:hover{color:var(--accent);background:var(--surface2);}
+
+.sum-bar{background:var(--surface);border-top:2px solid var(--accent);padding:11px 24px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+.sum-item{text-align:center;}
+.sum-lbl{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.sum-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:19px;color:var(--text);}
+.sum-val.big{color:var(--accent);font-size:25px;}
+.sum-div{width:1px;height:34px;background:var(--border);}
+
+.srch-row{display:flex;gap:9px;margin-bottom:16px;}
+.srch-wrap{flex:1;position:relative;}
+.srch-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;}
+.srch-inp{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:9px 11px 9px 34px;outline:none;transition:border-color .15s;}
+.srch-inp:focus{border-color:var(--accent);}
+.srch-inp::placeholder{color:var(--muted);}
+.flt-sel{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:12px;padding:9px 10px;outline:none;cursor:pointer;}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(275px,1fr));gap:1px;background:var(--border);}
+.cat-card{background:var(--surface);padding:14px;transition:background .1s;}
+.cat-card:hover{background:var(--surface2);}
+.cat-card.custom{border-top:2px solid var(--accent);}
+.cc-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;margin-bottom:5px;}
+.cc-specs{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px;}
+.spec{font-size:10px;font-weight:500;padding:2px 6px;background:var(--bg);color:var(--muted);border:1px solid var(--border);}
+.cc-prices{margin-bottom:8px;}
+.cc-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:11px;border-bottom:1px solid var(--border);}
+.cc-row:last-child{border-bottom:none;}
+.cc-sup{color:var(--muted);}
+.cc-price{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;}
+.cc-price.low{color:var(--green);}
+.cc-add{width:100%;background:var(--accent);color:#000;border:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:7px;cursor:pointer;transition:background .1s;}
+.cc-add:hover{background:#f5b030;}
+.cc-add.added{background:var(--green);}
+
+.psrch-wrap{max-width:640px;}
+.psrch-box{display:flex;margin-bottom:16px;}
+.psrch-inp{flex:1;background:var(--surface);border:1px solid var(--border);border-right:none;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:11px 12px;outline:none;}
+.psrch-inp:focus{border-color:var(--accent);}
+.psrch-inp::placeholder{color:var(--muted);}
+.psrch-btn{background:var(--accent);color:#000;border:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:0 18px;cursor:pointer;}
+.psrch-btn:hover{background:#f5b030;}
+.ph{background:var(--surface);border:1px solid var(--border);padding:24px;text-align:center;color:var(--muted);font-size:13px;line-height:1.8;}
+.res-card{background:var(--surface);border:1px solid var(--border);padding:15px 17px;margin-bottom:8px;}
+.rc-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.rc-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;}
+.rc-src{font-size:10px;color:var(--muted);}
+.rc-desc{font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.5;}
+.rc-price{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:21px;color:var(--accent);}
+.rc-unit{font-size:11px;color:var(--muted);margin-bottom:6px;}
+.rc-note{font-size:11px;color:var(--muted);font-style:italic;margin-bottom:9px;}
+.rc-add{background:var(--accent);color:#000;border:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:6px 13px;cursor:pointer;}
+.rc-add:hover{background:#f5b030;}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;}
+.chip{background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:12px;padding:5px 11px;cursor:pointer;transition:all .1s;}
+.chip:hover{border-color:var(--accent);color:var(--accent);}
+.chip-lbl{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);width:450px;max-width:95vw;padding:20px;}
+.modal-wide{width:540px;}
+.modal-ttl{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;}
+.mf{margin-bottom:11px;}
+.ml{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;display:block;}
+.mi{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:7px 9px;outline:none;transition:border-color .15s;}
+.mi:focus{border-color:var(--accent);}
+.mi-sel{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:7px 9px;outline:none;cursor:pointer;}
+.mrow{display:flex;gap:9px;}
+.mrow .mf{flex:1;}
+.mftr{display:flex;justify-content:flex-end;gap:7px;margin-top:16px;}
+.m-cancel{background:none;border:1px solid var(--border);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:7px 14px;cursor:pointer;}
+.m-cancel:hover{color:var(--text);}
+.m-save{background:var(--accent);color:#000;border:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:7px 14px;cursor:pointer;}
+.m-save:hover{background:#f5b030;}
+
+.np-icon-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:4px;}
+.np-icon{background:var(--bg);border:1px solid var(--border);padding:8px;text-align:center;font-size:18px;cursor:pointer;transition:all .1s;}
+.np-icon:hover,.np-icon.sel{border-color:var(--accent);background:var(--surface2);}
+
+.toast{position:fixed;bottom:72px;right:20px;background:var(--green);color:#000;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;padding:8px 15px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.show{opacity:1;}
+.empty{text-align:center;padding:32px;color:var(--muted);font-size:13px;}
+.empty-ico{font-size:32px;margin-bottom:8px;}
+
+#usernameOverlay{display:flex;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:600;align-items:center;justify-content:center;}
+#usernameOverlay.hidden{display:none;}
+.un-box{background:var(--surface);border:1px solid var(--border);padding:36px;width:380px;max-width:95vw;text-align:center;}
+.un-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:30px;letter-spacing:3px;color:var(--accent);margin-bottom:4px;}
+.un-logo span{color:var(--text);}
+.un-sub{font-size:12px;color:var(--muted);margin-bottom:24px;}
+.un-inp{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:15px;padding:10px 12px;outline:none;text-align:center;margin-bottom:12px;}
+.un-inp:focus{border-color:var(--accent);}
+.un-btn{width:100%;background:var(--accent);color:#000;border:none;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:14px;letter-spacing:2px;text-transform:uppercase;padding:11px;cursor:pointer;}
+.un-btn:hover{background:#f5b030;}
+.un-note{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6;}
+
+.loading{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;padding:40px;justify-content:center;}
+.spin{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- USERNAME -->
+<div id="usernameOverlay">
+  <div class="un-box">
+    <div class="un-logo">Noblek<span>Builder</span></div>
+    <div class="un-sub">Entrez votre nom pour continuer</div>
+    <input class="un-inp" type="text" id="unInput" placeholder="Votre prénom ou pseudo..." maxlength="30">
+    <button class="un-btn" onclick="setUsername()">Continuer →</button>
+    <div class="un-note">Votre nom apparaîtra dans les projets partagés.</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashView" class="hidden">
+  <div class="dash-header">
+    <div class="logo">Noblek<span>Builder</span></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span id="dashUser" style="font-size:12px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;"></span>
+      <button class="btn" onclick="document.getElementById('loadFile').click()">📂 Importer .json</button>
+      <input type="file" id="loadFile" accept=".json" style="display:none" onchange="importProject(event)">
+    </div>
+  </div>
+  <div class="dash-body">
+    <div class="dash-top">
+      <div>
+        <div class="dash-ttl">Mes Projets</div>
+        <div class="dash-sub">Tous vos estimations, accessibles de n'importe où.</div>
+      </div>
+    </div>
+    <div class="proj-grid" id="projGrid">
+      <div class="loading"><div class="spin"></div> Connexion à Firebase...</div>
+    </div>
+  </div>
+</div>
+
+<!-- APP VIEW -->
+<div id="appView">
+  <header>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="btn-back" onclick="backToDash()">← Projets</button>
+      <div class="logo" style="font-size:16px;">Noblek<span>Builder</span></div>
+      <div class="proj-wrap">
+        <span class="proj-lbl">Projet :</span>
+        <input class="proj-inp" type="text" id="projName" value="">
+      </div>
+    </div>
+    <div class="hdr-r">
+      <div class="as"><div class="as-dot" id="asDot"></div><span id="asLbl">—</span></div>
+      <button class="btn gr" onclick="exportExcel()">📊 Excel</button>
+      <button class="btn" onclick="exportCSV()">⬇ CSV</button>
+      <button class="btn" onclick="saveLocalProject()">💾 Sauvegarder sur l'ordi</button>
+    </div>
+  </header>
+
+  <div class="app">
+    <nav class="leftnav">
+      <div class="nav-lbl">Estimation</div>
+      <button class="nav-btn active" onclick="switchTab('estimate',this)"><span>📊</span> Estimate Builder</button>
+      <hr class="nav-div">
+      <div class="nav-lbl">Produits</div>
+      <button class="nav-btn" onclick="switchTab('catalog',this)"><span>📦</span> Catalogue</button>
+      <button class="nav-btn" onclick="switchTab('search',this)"><span>🔍</span> Recherche</button>
+    </nav>
+
+    <div class="main">
+      <div class="tab active" id="tab-estimate">
+        <div class="sec-ttl">Estimate Builder</div>
+        <div class="sec-sub">Tous les coûts du projet en un seul endroit.</div>
+        <div id="est-secs"></div>
+        <div style="height:80px"></div>
+      </div>
+
+      <div class="tab" id="tab-catalog">
+        <div class="sec-ttl">Catalogue de matériaux</div>
+        <div class="sec-sub">Parcourez les produits et ajoutez-les à votre estimation.</div>
+        <div class="srch-row">
+          <div class="srch-wrap">
+            <span class="srch-ico">🔍</span>
+            <input class="srch-inp" type="text" id="catSearch" placeholder="Rechercher... (ex: 2x4, OSB, R-20)" oninput="renderCatalog()">
+          </div>
+          <select class="flt-sel" id="catCat" onchange="renderCatalog()">
+            <option value="all">Toutes catégories</option>
+            <option value="custom">⭐ Mes produits</option>
+            <option value="framing">Charpente</option>
+            <option value="sheathing">Panneaux</option>
+            <option value="roofing">Toiture</option>
+            <option value="concrete">Béton & Maçonnerie</option>
+            <option value="insulation">Isolation</option>
+            <option value="fasteners">Fixations</option>
+          </select>
+          <button class="btn ac" onclick="openCatModal()" style="height:38px">+ Ajouter produit</button>
+        </div>
+        <div class="cat-grid" id="catGrid"></div>
+      </div>
+
+      <div class="tab" id="tab-search">
+        <div class="sec-ttl">Recherche produits</div>
+        <div class="sec-sub">Maibec, Canexel, Rockwool, puit artésien, fosse septique et plus.</div>
+        <div class="psrch-wrap">
+          <div class="psrch-box">
+            <input class="psrch-inp" type="text" id="psrchInp" placeholder="ex: Maibec siding, fosse septique..." onkeydown="if(event.key==='Enter')doSearch()">
+            <button class="psrch-btn" onclick="doSearch()">Rechercher</button>
+          </div>
+          <div id="psrchRes">
+            <div class="ph">🔍<br><strong>Recherchez n'importe quel produit de construction</strong><br>Entrez un nom de marque, matériau ou service.</div>
+          </div>
+          <div style="margin-top:16px">
+            <div class="chip-lbl">Recherches rapides</div>
+            <div class="chips">
+              <span class="chip" onclick="qs('Maibec siding')">Maibec siding</span>
+              <span class="chip" onclick="qs('Canexel cladding')">Canexel</span>
+              <span class="chip" onclick="qs('Rockwool insulation')">Rockwool</span>
+              <span class="chip" onclick="qs('puit artésien')">Puit artésien</span>
+              <span class="chip" onclick="qs('fosse septique')">Fosse septique</span>
+              <span class="chip" onclick="qs('Velux skylight')">Velux</span>
+              <span class="chip" onclick="qs('LVL beam')">Poutre LVL</span>
+              <span class="chip" onclick="qs('I-joist')">I-joist</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sum-bar">
+        <div class="sum-item"><div class="sum-lbl">Matériaux</div><div class="sum-val" id="sb-materials">$0</div></div>
+        <div class="sum-div"></div>
+        <div class="sum-item"><div class="sum-lbl">Préfab</div><div class="sum-val" id="sb-prefab">$0</div></div>
+        <div class="sum-div"></div>
+        <div class="sum-item"><div class="sum-lbl">Métiers</div><div class="sum-val" id="sb-trades">$0</div></div>
+        <div class="sum-div"></div>
+        <div class="sum-item"><div class="sum-lbl">Site</div><div class="sum-val" id="sb-site">$0</div></div>
+        <div class="sum-div"></div>
+        <div class="sum-item"><div class="sum-lbl">Sous-traitants</div><div class="sum-val" id="sb-subs">$0</div></div>
+        <div class="sum-div"></div>
+        <div class="sum-item"><div class="sum-lbl">Total estimé</div><div class="sum-val big" id="sb-total">$0</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nouveau projet -->
+<div class="overlay" id="newProjModal">
+  <div class="modal modal-wide">
+    <div class="modal-ttl">+ Nouveau Projet</div>
+    <div class="mf"><label class="ml">Nom du projet *</label><input class="mi" type="text" id="np-name" placeholder="ex: Maison Lac-Beauport, Chalet des Laurentides..."></div>
+    <div class="mf">
+      <label class="ml">Icône</label>
+      <div class="np-icon-grid" id="npIconGrid"></div>
+    </div>
+    <div class="mf">
+      <label class="ml">Type de projet</label>
+      <select class="mi-sel" id="np-type">
+        <option value="Maison neuve">Maison neuve</option>
+        <option value="Chalet">Chalet</option>
+        <option value="Rénovation">Rénovation</option>
+        <option value="Garage">Garage</option>
+        <option value="Commercial">Commercial</option>
+        <option value="Autre">Autre</option>
+      </select>
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--border);padding:9px 11px;font-size:11px;color:var(--muted);">
+      ☁️ Ce projet sera sauvegardé dans Firebase et accessible par toute l'équipe.
+    </div>
+    <div class="mftr">
+      <button class="m-cancel" onclick="closeNewProjModal()">Annuler</button>
+      <button class="m-save" onclick="createNewProject()">Créer le projet →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Ajouter item -->
+<div class="overlay" id="itemModal">
+  <div class="modal">
+    <div class="modal-ttl" id="itemModalTtl">Ajouter</div>
+    <div class="mf"><label class="ml">Nom *</label><input class="mi" type="text" id="m-name" placeholder="ex: Panneau mur préfab, Électricien..."></div>
+    <div class="mf"><label class="ml">Note / Spécification</label><input class="mi" type="text" id="m-note" placeholder="ex: 2×6 16po OC, forfait complet..."></div>
+    <div class="mrow">
+      <div class="mf"><label class="ml">Quantité</label><input class="mi" type="number" id="m-qty" value="1" min="0.01" step="0.01"></div>
+      <div class="mf"><label class="ml">Unité</label><input class="mi" type="text" id="m-unit" placeholder="each, pi², forfait..."></div>
+      <div class="mf"><label class="ml">Prix unitaire ($)</label><input class="mi" type="number" id="m-price" min="0" step="0.01" placeholder="0.00"></div>
+    </div>
+    <div class="mftr">
+      <button class="m-cancel" onclick="closeItemModal()">Annuler</button>
+      <button class="m-save" onclick="saveItem()">Ajouter à l'estimation</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Catalogue -->
+<div class="overlay" id="catModal">
+  <div class="modal">
+    <div class="modal-ttl">⭐ Ajouter au catalogue</div>
+    <div class="mf"><label class="ml">Nom du produit *</label><input class="mi" type="text" id="cp-name" placeholder="ex: Maibec Cedar 6&quot;..."></div>
+    <div class="mf"><label class="ml">Spécifications</label><input class="mi" type="text" id="cp-specs" placeholder="ex: 8 pi, traité ACQ..."></div>
+    <div class="mrow">
+      <div class="mf"><label class="ml">Mon prix ($) *</label><input class="mi" type="number" id="cp-price" min="0" step="0.01" placeholder="0.00"></div>
+      <div class="mf"><label class="ml">Unité</label><input class="mi" type="text" id="cp-unit" placeholder="each, pi²..."></div>
+    </div>
+    <div class="mf">
+      <label class="ml">Catégorie</label>
+      <select class="mi-sel" id="cp-cat">
+        <option value="custom">⭐ Mes produits</option>
+        <option value="framing">Charpente</option>
+        <option value="sheathing">Panneaux</option>
+        <option value="roofing">Toiture</option>
+        <option value="concrete">Béton & Maçonnerie</option>
+        <option value="insulation">Isolation</option>
+        <option value="fasteners">Fixations</option>
+      </select>
+    </div>
+    <div class="mftr">
+      <button class="m-cancel" onclick="closeCatModal()">Annuler</button>
+      <button class="m-save" onclick="saveCatProduct()">Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- FIREBASE SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCxmD5HlKOgW5zwkftSVHr-xHrOlLXU6ek",
+  authDomain: "noblek-builder.firebaseapp.com",
+  projectId: "noblek-builder",
+  storageBucket: "noblek-builder.firebasestorage.app",
+  messagingSenderId: "105785616325",
+  appId: "1:105785616325:web:de8cf5d24046a0c19bcdac",
+  measurementId: "G-7KKNKKMLQJ"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ── Expose Firebase functions to global scope ──
+window._fb = {
+  async getProjects(){
+    try{
+      const snap = await getDocs(collection(db,'projects'));
+      return snap.docs.map(d=>d.data());
+    }catch(e){console.error(e);return[];}
+  },
+  async getProject(id){
+    try{
+      const snap = await getDoc(doc(db,'projects',id));
+      return snap.exists()?snap.data():null;
+    }catch(e){console.error(e);return null;}
+  },
+  async saveProject(id,data){
+    try{
+      await setDoc(doc(db,'projects',id),data);
+      return true;
+    }catch(e){console.error(e);return false;}
+  },
+  async deleteProject(id){
+    try{
+      await deleteDoc(doc(db,'projects',id));
+      return true;
+    }catch(e){console.error(e);return false;}
+  }
+};
+
+// Signal app that Firebase is ready
+window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<script>
+// ════════════════════════════
+// CATALOG DATA
+// ════════════════════════════
+const BUILT_IN=[
+  {id:1,cat:'framing',name:'2×4 Stud',specs:['8 pi','SPF','KD-HT'],prices:[{s:'Home Depot CA',p:5.97},{s:'RONA',p:5.79},{s:'Canac',p:5.49},{s:'BMR',p:5.89}],unit:'each'},
+  {id:2,cat:'framing',name:'2×4 Stud',specs:['10 pi','SPF','KD-HT'],prices:[{s:'Home Depot CA',p:7.49},{s:'RONA',p:7.29},{s:'Canac',p:6.99},{s:'BMR',p:7.39}],unit:'each'},
+  {id:3,cat:'framing',name:'2×6 Stud',specs:['8 pi','SPF','KD-HT'],prices:[{s:'Home Depot CA',p:9.47},{s:'RONA',p:9.19},{s:'Canac',p:8.79},{s:'BMR',p:9.29}],unit:'each'},
+  {id:4,cat:'framing',name:'2×6 Stud',specs:['10 pi','SPF','KD-HT'],prices:[{s:'Home Depot CA',p:11.97},{s:'RONA',p:11.49},{s:'Canac',p:10.99},{s:'BMR',p:11.79}],unit:'each'},
+  {id:5,cat:'framing',name:'2×8 Joist',specs:['12 pi','SPF','#2 & Better'],prices:[{s:'Home Depot CA',p:17.49},{s:'RONA',p:16.99},{s:'Canac',p:16.49},{s:'BMR',p:17.19}],unit:'each'},
+  {id:6,cat:'framing',name:'4×4 Post — Traité',specs:['8 pi','Traité ACQ'],prices:[{s:'Home Depot CA',p:19.97},{s:'RONA',p:19.49},{s:'Canac',p:18.99},{s:'BMR',p:19.29}],unit:'each'},
+  {id:7,cat:'framing',name:'Poutre LVL',specs:['3.5×9.5 po','16 pi'],prices:[{s:'Home Depot CA',p:189},{s:'RONA',p:184},{s:'Canac',p:179},{s:'BMR',p:186}],unit:'each'},
+  {id:8,cat:'sheathing',name:'OSB 7/16"',specs:['4×8 pi'],prices:[{s:'Home Depot CA',p:24.97},{s:'RONA',p:23.99},{s:'Canac',p:22.49},{s:'BMR',p:23.79}],unit:'feuille'},
+  {id:9,cat:'sheathing',name:'OSB 5/8"',specs:['4×8 pi'],prices:[{s:'Home Depot CA',p:32.97},{s:'RONA',p:31.49},{s:'Canac',p:29.99},{s:'BMR',p:31.99}],unit:'feuille'},
+  {id:10,cat:'sheathing',name:'Contreplaqué 1/2"',specs:['4×8 pi','SPF'],prices:[{s:'Home Depot CA',p:44.97},{s:'RONA',p:43.99},{s:'Canac',p:41.99},{s:'BMR',p:43.49}],unit:'feuille'},
+  {id:11,cat:'sheathing',name:'Sous-plancher T&G 3/4"',specs:['4×8 pi','T&G'],prices:[{s:'Home Depot CA',p:54.97},{s:'RONA',p:53.49},{s:'Canac',p:51.99},{s:'BMR',p:53.99}],unit:'feuille'},
+  {id:12,cat:'roofing',name:'Bardeaux asphalte 30 ans',specs:['33.3 pi²/bdl'],prices:[{s:'Home Depot CA',p:49.97},{s:'RONA',p:48.99},{s:'Canac',p:46.99},{s:'BMR',p:48.49}],unit:'paquet'},
+  {id:13,cat:'roofing',name:'Membrane glacée',specs:['36"×75 pi'],prices:[{s:'Home Depot CA',p:89.97},{s:'RONA',p:87.99},{s:'Canac',p:84.99},{s:'BMR',p:86.99}],unit:'rouleau'},
+  {id:14,cat:'concrete',name:'Béton prêt 30 kg',specs:['25 MPa'],prices:[{s:'Home Depot CA',p:7.97},{s:'RONA',p:7.79},{s:'Canac',p:7.49},{s:'BMR',p:7.69}],unit:'sac'},
+  {id:15,cat:'insulation',name:'Isolant en nattes R-20',specs:['16" OC','40 pi²'],prices:[{s:'Home Depot CA',p:34.97},{s:'RONA',p:33.99},{s:'Canac',p:32.49},{s:'BMR',p:33.79}],unit:'paquet'},
+  {id:16,cat:'insulation',name:'Isolant en nattes R-22',specs:['16" OC','40 pi²'],prices:[{s:'Home Depot CA',p:44.97},{s:'RONA',p:43.49},{s:'Canac',p:41.99},{s:'BMR',p:43.19}],unit:'paquet'},
+  {id:17,cat:'insulation',name:'Panneau rigide XPS R-10',specs:['2 po × 4×8 pi'],prices:[{s:'Home Depot CA',p:39.97},{s:'RONA',p:38.99},{s:'Canac',p:37.49},{s:'BMR',p:38.79}],unit:'feuille'},
+  {id:18,cat:'fasteners',name:'Clous de charpente 3.5"',specs:['16d','1 lb'],prices:[{s:'Home Depot CA',p:14.97},{s:'RONA',p:14.49},{s:'Canac',p:13.99},{s:'BMR',p:14.29}],unit:'boîte'},
+  {id:19,cat:'fasteners',name:'Vis structurales 3"',specs:['#10','1 lb'],prices:[{s:'Home Depot CA',p:19.97},{s:'RONA',p:19.49},{s:'Canac',p:18.49},{s:'BMR',p:19.19}],unit:'boîte'},
+];
+
+const SEARCH_DB={
+  'maibec':[{name:'Maibec Siding — Cedar Bevel',desc:'Bardage en cèdre véritable, profils 6", 8" ou 10".',price:4.25,unit:'pi linéaire',note:'Prix estimé — vérifier avec représentant Maibec'}],
+  'canexel':[{name:'Canexel — Revêtement composite',desc:'Fibres de bois compressées. Faible entretien.',price:3.80,unit:'pi²',note:'Prix estimé. Commander via distributeur agréé.'}],
+  'rockwool':[{name:'Rockwool Comfortbatt R-14',desc:'Laine de roche pour murs 2×4, 16" OC.',price:79.99,unit:'paquet (40 pi²)',note:'Disponible Home Depot CA et RONA'}],
+  'puit':[{name:'Puit artésien — forage complet',desc:'Forage + tubage + pompe submersible + raccordement.',price:15000,unit:'forfait',note:'Prix moyen Québec 2024. Obtenir 3 soumissions.'}],
+  'fosse':[
+    {name:'Fosse septique 3 000 gallons',desc:'Béton 3 chambres, installation complète.',price:18000,unit:'forfait',note:'Varie selon terrain. Permis municipal requis.'},
+    {name:'Fosse septique 4 500 gallons',desc:'Pour maison de 4 chambres+.',price:24000,unit:'forfait',note:'Inclut généralement les permis municipaux'},
+  ],
+  'velux':[{name:'Velux FCM — Puit de lumière 22×46"',desc:'Fixe, verre trempé Low-E.',price:549,unit:'each',note:'Installation non incluse (~400–600$ extra)'}],
+  'i-joist':[
+    {name:'I-Joist TJI 110 — 9.5"',desc:'Solive en I engineerée. Portée jusqu\'à 18 pi.',price:26.50,unit:'each',note:'Disponible Canac et Home Depot CA'},
+    {name:'I-Joist TJI 210 — 11.875"',desc:'Solive en I grande portée.',price:34.80,unit:'each',note:'Commander avec liste de coupe'},
+  ],
+  'lvl':[{name:'Poutre LVL 3.5×9.5" — 16 pi',desc:'Lamellée collée. Usage structurel.',price:189,unit:'each',note:'En stock chez Canac et Home Depot CA'}],
+};
+
+const SECS=[
+  {key:'materials',label:'Matériaux',icon:'🪵'},
+  {key:'prefab',label:'Composantes Préfab',icon:'🏗️'},
+  {key:'trades',label:'Métiers & Services',icon:'🔧'},
+  {key:'site',label:'Services de Site',icon:'🌍'},
+  {key:'subs',label:'Sous-traitants',icon:'📋'},
+];
+
+const PROJ_ICONS=['🏠','🏡','🏗️','🏘️','🌲','⛺','🏢','🔨','🪚','🏛️','🌿','🏔️'];
+
+// ════════════════════════════
+// STATE
+// ════════════════════════════
+let currentUser='';
+let currentProjectId=null;
+let estimate={materials:[],prefab:[],trades:[],site:[],subs:[]};
+let activeSec='';
+let selectedIcon='🏠';
+const CK='buildcat_v3_catalog';
+let firebaseReady=false;
+
+function uid(){return Math.random().toString(36).slice(2,10);}
+function fmt(n){return n.toLocaleString('fr-CA',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmts(n){return n.toLocaleString('fr-CA',{maximumFractionDigits:0});}
+function esc(s){return String(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function grandTotal(){return SECS.reduce((a,s)=>a+estimate[s.key].reduce((b,i)=>b+(i.qty||0)*(i.price||0),0),0);}
+
+// ════════════════════════════
+// FIREBASE READY
+// ════════════════════════════
+window.addEventListener('firebase-ready',()=>{
+  firebaseReady=true;
+  const saved=localStorage.getItem('noblek_user');
+  if(saved){
+    currentUser=saved;
+    document.getElementById('usernameOverlay').classList.add('hidden');
+    document.getElementById('dashUser').textContent='👤 '+saved;
+    document.getElementById('dashView').classList.remove('hidden');
+    renderDash();
+  }
+});
+
+// ════════════════════════════
+// USERNAME
+// ════════════════════════════
+function setUsername(){
+  const v=document.getElementById('unInput').value.trim();
+  if(!v) return;
+  currentUser=v;
+  localStorage.setItem('noblek_user',v);
+  document.getElementById('usernameOverlay').classList.add('hidden');
+  document.getElementById('dashUser').textContent='👤 '+v;
+  document.getElementById('dashView').classList.remove('hidden');
+  renderDash();
+}
+document.getElementById('unInput').addEventListener('keydown',e=>{if(e.key==='Enter')setUsername();});
+
+// ════════════════════════════
+// DASHBOARD
+// ════════════════════════════
+async function renderDash(){
+  const grid=document.getElementById('projGrid');
+  grid.innerHTML='<div class="loading"><div class="spin"></div> Chargement des projets...</div>';
+  
+  const projects=await window._fb.getProjects();
+  projects.sort((a,b)=>new Date(b.updatedAt||0)-new Date(a.updatedAt||0));
+
+  let html=`<div class="new-proj-card" onclick="openNewProjModal()">
+    <div class="new-proj-ico">+</div>
+    <div class="new-proj-lbl">Nouveau Projet</div>
+  </div>`;
+
+  for(const p of projects){
+    const isOwner=p.owner===currentUser;
+    const dateStr=p.updatedAt?new Date(p.updatedAt).toLocaleDateString('fr-CA'):'—';
+    html+=`<div class="proj-card ${isOwner?'mine':'shared'}" onclick="openProject('${p.id}')">
+      <div class="pc-top">
+        <div class="pc-name">${p.icon||'🏠'} ${esc(p.name)}</div>
+        <span class="pc-badge ${isOwner?'mine':'shared'}">${isOwner?'Mon projet':'Partagé'}</span>
+      </div>
+      <div class="pc-date">Modifié : ${dateStr}${p.lastEditBy?' par '+esc(p.lastEditBy):''}</div>
+      <div class="pc-total-lbl">Total estimé</div>
+      <div class="pc-total">$${fmts(p.total||0)}</div>
+      <div class="pc-footer">
+        <span class="pc-user">📁 ${esc(p.type||'Projet')} · ${esc(p.owner||'')}</span>
+        ${isOwner?`<button class="pc-del" onclick="event.stopPropagation();deleteProject('${p.id}')">✕ Supprimer</button>`:''}
+      </div>
+    </div>`;
+  }
+  grid.innerHTML=html;
+}
+
+async function openProject(projId){
+  setSaveStatus('saving','Chargement…');
+  const data=await window._fb.getProject(projId);
+  if(!data){showToast('❌ Projet introuvable');setSaveStatus('','—');return;}
+  currentProjectId=projId;
+  estimate={materials:[],prefab:[],trades:[],site:[],subs:[],...(data.estimate||{})};
+  document.getElementById('projName').value=data.name||'Sans titre';
+  document.getElementById('dashView').classList.add('hidden');
+  document.getElementById('appView').classList.add('visible');
+  buildSections();
+  renderAll();
+  setSaveStatus('saved','Firebase ✓');
+  showToast('✓ "'+data.name+'" ouvert');
+}
+
+function backToDash(){
+  currentProjectId=null;
+  document.getElementById('appView').classList.remove('visible');
+  document.getElementById('dashView').classList.remove('hidden');
+  renderDash();
+}
+
+// ════════════════════════════
+// NEW PROJECT
+// ════════════════════════════
+function buildIconGrid(){
+  document.getElementById('npIconGrid').innerHTML=PROJ_ICONS.map(ico=>`
+    <div class="np-icon ${ico===selectedIcon?'sel':''}" onclick="selectIcon('${ico}')">${ico}</div>
+  `).join('');
+}
+function selectIcon(ico){selectedIcon=ico;buildIconGrid();}
+function openNewProjModal(){
+  selectedIcon='🏠';
+  document.getElementById('np-name').value='';
+  buildIconGrid();
+  document.getElementById('newProjModal').classList.add('open');
+  setTimeout(()=>document.getElementById('np-name').focus(),50);
+}
+function closeNewProjModal(){document.getElementById('newProjModal').classList.remove('open');}
+
+async function createNewProject(){
+  const name=document.getElementById('np-name').value.trim();
+  if(!name){document.getElementById('np-name').focus();return;}
+  const type=document.getElementById('np-type').value;
+  const projId='proj-'+uid();
+  const now=new Date().toISOString();
+  const projData={
+    id:projId,name,icon:selectedIcon,type,
+    owner:currentUser,createdAt:now,updatedAt:now,
+    lastEditBy:currentUser,total:0,
+    estimate:{materials:[],prefab:[],trades:[],site:[],subs:[]}
+  };
+  const ok=await window._fb.saveProject(projId,projData);
+  if(!ok){showToast('❌ Erreur Firebase');return;}
+  closeNewProjModal();
+  showToast('✓ Projet "'+name+'" créé!');
+  openProject(projId);
+}
+
+async function deleteProject(projId){
+  if(!confirm('Supprimer ce projet? Cette action est irréversible.')) return;
+  await window._fb.deleteProject(projId);
+  showToast('Projet supprimé');
+  renderDash();
+}
+
+// ════════════════════════════
+// IMPORT .json
+// ════════════════════════════
+function importProject(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(!d.estimate) throw new Error();
+      const projId='proj-'+uid();
+      const name=d.name||'Projet importé';
+      const now=new Date().toISOString();
+      const total=SECS.reduce((a,s)=>a+(d.estimate[s.key]||[]).reduce((b,i)=>b+(i.qty||0)*(i.price||0),0),0);
+      const projData={id:projId,name,icon:'📂',type:'Importé',owner:currentUser,createdAt:now,updatedAt:now,lastEditBy:currentUser,total,estimate:{materials:[],prefab:[],trades:[],site:[],subs:[],...d.estimate}};
+      await window._fb.saveProject(projId,projData);
+      showToast('✓ "'+name+'" importé dans Firebase!');
+      renderDash();
+    }catch(err){alert('Fichier invalide.');}
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+// ════════════════════════════
+// SAVE TO FIREBASE
+// ════════════════════════════
+function setSaveStatus(state,txt){
+  const dot=document.getElementById('asDot'),lbl=document.getElementById('asLbl');
+  dot.className='as-dot'+(state?' '+state:'');
+  lbl.textContent=txt;
+}
+
+let saveTimer=null;
+async function triggerSave(){
+  setSaveStatus('saving','Sauvegarde…');
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{
+    if(!currentProjectId) return;
+    const name=document.getElementById('projName').value||'Sans titre';
+    const now=new Date().toISOString();
+    const total=grandTotal();
+    const existing=await window._fb.getProject(currentProjectId)||{};
+    const projData={
+      ...existing,
+      id:currentProjectId,name,
+      updatedAt:now,lastEditBy:currentUser,total,
+      estimate
+    };
+    const ok=await window._fb.saveProject(currentProjectId,projData);
+    setSaveStatus(ok?'saved':'','ok ? Firebase ✓ : Erreur');
+    if(ok) lbl.textContent='Firebase ✓';
+  },900);
+}
+
+// Fix: direct reference
+async function triggerSaveDirect(){
+  const dot=document.getElementById('asDot'),lbl=document.getElementById('asLbl');
+  dot.className='as-dot saving'; lbl.textContent='Sauvegarde…';
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{
+    if(!currentProjectId) return;
+    const name=document.getElementById('projName').value||'Sans titre';
+    const now=new Date().toISOString();
+    const total=grandTotal();
+    const existing=await window._fb.getProject(currentProjectId)||{};
+    const projData={...existing,id:currentProjectId,name,updatedAt:now,lastEditBy:currentUser,total,estimate};
+    const ok=await window._fb.saveProject(currentProjectId,projData);
+    dot.className='as-dot saved'; lbl.textContent=ok?'Firebase ✓':'Erreur';
+  },900);
+}
+
+document.getElementById('projName').addEventListener('input',()=>{if(currentProjectId) triggerSaveDirect();});
+
+// ════════════════════════════
+// SAVE TO LOCAL (ordi)
+// ════════════════════════════
+function saveLocalProject(){
+  const name=document.getElementById('projName').value||'Projet';
+  const d={name,savedAt:new Date().toISOString(),estimate};
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}));
+  a.download=(name.replace(/\s+/g,'-')||'projet')+'.buildcat.json';
+  a.click();
+  showToast('✓ Sauvegardé sur l\'ordi');
+}
+
+// ════════════════════════════
+// TABS
+// ════════════════════════════
+function switchTab(id,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='catalog') renderCatalog();
+}
+
+// ════════════════════════════
+// ESTIMATE
+// ════════════════════════════
+function buildSections(){
+  document.getElementById('est-secs').innerHTML=SECS.map(s=>`
+    <div class="est-sec">
+      <div class="est-hdr" onclick="toggleSec('${s.key}')">
+        <div class="est-hdr-ttl">${s.icon} ${s.label}</div>
+        <div style="display:flex;align-items:center">
+          <div class="est-tot" id="etot-${s.key}">$0.00</div>
+          <span class="est-tog" id="etog-${s.key}">▼</span>
+        </div>
+      </div>
+      <div class="est-body" id="ebody-${s.key}">
+        <table class="tbl">
+          <thead><tr>
+            <th style="width:32%">Item</th><th style="width:22%">Note / Spéc</th>
+            <th style="width:9%">Qté</th><th style="width:10%">Unité</th>
+            <th style="width:13%">Prix unit. ($)</th><th style="width:11%;text-align:right">Total</th>
+            <th style="width:3%"></th>
+          </tr></thead>
+          <tbody id="tbody-${s.key}"></tbody>
+        </table>
+        <button class="add-row" onclick="openItemModal('${s.key}')">+ Ajouter</button>
+      </div>
+    </div>`).join('');
+}
+
+function toggleSec(k){
+  const b=document.getElementById('ebody-'+k),t=document.getElementById('etog-'+k);
+  b.classList.toggle('collapsed');
+  t.textContent=b.classList.contains('collapsed')?'▶':'▼';
+}
+
+function renderSec(k){
+  const items=estimate[k];
+  const tbody=document.getElementById('tbody-'+k);
+  const icon=SECS.find(s=>s.key===k)?.icon||'📦';
+  if(!items.length){
+    tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="empty-ico">${icon}</div>Aucun élément. Cliquez + Ajouter.</div></td></tr>`;
+    document.getElementById('etot-'+k).textContent='$0.00';
+    return;
+  }
+  tbody.innerHTML=items.map(item=>{
+    const tot=(item.qty||0)*(item.price||0);
+    return `<tr>
+      <td><input class="ii" value="${esc(item.name)}" onchange="upd('${k}','${item.id}','name',this.value)"></td>
+      <td><input class="ii mu" value="${esc(item.note)}" placeholder="Note..." onchange="upd('${k}','${item.id}','note',this.value)"></td>
+      <td><input class="ii sm" type="number" min="0" step="0.01" value="${item.qty}" onchange="upd('${k}','${item.id}','qty',parseFloat(this.value)||0)"></td>
+      <td><input class="ii" value="${esc(item.unit)}" placeholder="unit" style="width:68px" onchange="upd('${k}','${item.id}','unit',this.value)"></td>
+      <td><input class="ii pr" type="number" min="0" step="0.01" value="${item.price||''}" placeholder="0.00" onchange="upd('${k}','${item.id}','price',parseFloat(this.value)||0)"></td>
+      <td class="cell-tot" id="rt-${item.id}">$${fmt(tot)}</td>
+      <td><button class="del" onclick="delItem('${k}','${item.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('etot-'+k).textContent='$'+fmt(items.reduce((a,i)=>a+(i.qty||0)*(i.price||0),0));
+}
+
+function renderAll(){SECS.forEach(s=>renderSec(s.key));updateSummary();}
+
+function upd(k,id,field,val){
+  const item=estimate[k].find(i=>i.id===id); if(!item) return;
+  item[field]=val;
+  const tot=(item.qty||0)*(item.price||0);
+  const el=document.getElementById('rt-'+id); if(el) el.textContent='$'+fmt(tot);
+  document.getElementById('etot-'+k).textContent='$'+fmt(estimate[k].reduce((a,i)=>a+(i.qty||0)*(i.price||0),0));
+  updateSummary(); triggerSaveDirect();
+}
+
+function delItem(k,id){
+  estimate[k]=estimate[k].filter(i=>i.id!==id);
+  renderSec(k); updateSummary(); triggerSaveDirect();
+}
+
+function updateSummary(){
+  let grand=0;
+  SECS.forEach(s=>{
+    const t=estimate[s.key].reduce((a,i)=>a+(i.qty||0)*(i.price||0),0);
+    grand+=t;
+    document.getElementById('sb-'+s.key).textContent='$'+fmts(t);
+  });
+  document.getElementById('sb-total').textContent='$'+fmts(grand);
+}
+
+// ════════════════════════════
+// ITEM MODAL
+// ════════════════════════════
+const MODAL_TTL={materials:'Ajouter un matériau',prefab:'Ajouter une composante préfab',trades:'Ajouter un métier / service',site:'Ajouter un service de site',subs:'Ajouter un sous-traitant'};
+const MODAL_UNIT={materials:'each',prefab:'forfait',trades:'forfait',site:'forfait',subs:'forfait'};
+
+function openItemModal(k){
+  activeSec=k;
+  document.getElementById('itemModalTtl').textContent=MODAL_TTL[k]||'Ajouter';
+  ['m-name','m-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('m-qty').value=1;
+  document.getElementById('m-unit').value=MODAL_UNIT[k]||'each';
+  document.getElementById('m-price').value='';
+  document.getElementById('itemModal').classList.add('open');
+  setTimeout(()=>document.getElementById('m-name').focus(),50);
+}
+function closeItemModal(){document.getElementById('itemModal').classList.remove('open');}
+
+function saveItem(){
+  const name=document.getElementById('m-name').value.trim();
+  if(!name){document.getElementById('m-name').focus();return;}
+  estimate[activeSec].push({
+    id:uid(),name,
+    note:document.getElementById('m-note').value.trim(),
+    qty:parseFloat(document.getElementById('m-qty').value)||1,
+    unit:document.getElementById('m-unit').value.trim()||'each',
+    price:parseFloat(document.getElementById('m-price').value)||0,
+  });
+  renderSec(activeSec); updateSummary(); triggerSaveDirect();
+  closeItemModal();
+  showToast('✓ '+name+' ajouté');
+}
+document.getElementById('itemModal').addEventListener('click',e=>{if(e.target.id==='itemModal')closeItemModal();});
+
+// ════════════════════════════
+// CATALOG
+// ════════════════════════════
+function getCustom(){try{return JSON.parse(localStorage.getItem(CK))||[];}catch(e){return[];}}
+function setCustom(a){localStorage.setItem(CK,JSON.stringify(a));}
+
+function openCatModal(){
+  ['cp-name','cp-specs','cp-unit'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cp-price').value='';
+  document.getElementById('cp-cat').value='custom';
+  document.getElementById('catModal').classList.add('open');
+  setTimeout(()=>document.getElementById('cp-name').focus(),50);
+}
+function closeCatModal(){document.getElementById('catModal').classList.remove('open');}
+
+function saveCatProduct(){
+  const name=document.getElementById('cp-name').value.trim();
+  const price=parseFloat(document.getElementById('cp-price').value);
+  if(!name){document.getElementById('cp-name').focus();return;}
+  if(isNaN(price)||price<0){document.getElementById('cp-price').focus();return;}
+  const raw=document.getElementById('cp-specs').value.trim();
+  const p={id:'c-'+uid(),name,specs:raw?raw.split(',').map(s=>s.trim()).filter(Boolean):[],unit:document.getElementById('cp-unit').value.trim()||'each',cat:document.getElementById('cp-cat').value,price,isCustom:true,createdAt:new Date().toISOString()};
+  const arr=getCustom(); arr.unshift(p); setCustom(arr);
+  closeCatModal(); renderCatalog();
+  showToast('⭐ "'+name+'" ajouté au catalogue');
+}
+
+function deleteCustom(id){
+  if(!confirm('Retirer ce produit?')) return;
+  setCustom(getCustom().filter(p=>p.id!==id));
+  renderCatalog();
+}
+document.getElementById('catModal').addEventListener('click',e=>{if(e.target.id==='catModal')closeCatModal();});
+
+function renderCatalog(){
+  const q=(document.getElementById('catSearch').value||'').toLowerCase().trim();
+  const cat=document.getElementById('catCat').value;
+  const all=[...getCustom().map(p=>({...p,_c:true})),...BUILT_IN];
+  const filtered=all.filter(p=>{
+    if(cat!=='all'&&(p.cat||'custom')!==cat) return false;
+    if(q){const hay=[p.name,...(p.specs||[]),(p.cat||'custom')].join(' ').toLowerCase();return q.split(' ').every(w=>hay.includes(w));}
+    return true;
+  });
+  const grid=document.getElementById('catGrid');
+  if(!filtered.length){grid.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="empty-ico">📦</div>Aucun produit trouvé.</div>`;return;}
+  grid.innerHTML=filtered.map(p=>{
+    if(p._c){
+      return `<div class="cat-card custom">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+          <div class="cc-name">⭐ ${esc(p.name)}</div>
+          <button onclick="deleteCustom('${p.id}')" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer">✕</button>
+        </div>
+        <div class="cc-specs">${(p.specs||[]).map(s=>`<span class="spec">${esc(s)}</span>`).join('')}</div>
+        <div class="cc-prices"><div class="cc-row"><span class="cc-sup">Mon prix</span><span class="cc-price low">$${p.price.toFixed(2)} <span style="font-size:10px;color:var(--muted);font-weight:400">/${esc(p.unit)}</span></span></div></div>
+        <button class="cc-add" id="ccb-${p.id}" onclick="addCustomToEst('${p.id}')">+ Ajouter à l'estimation</button>
+      </div>`;
+    } else {
+      const minP=Math.min(...p.prices.map(x=>x.p));
+      return `<div class="cat-card">
+        <div class="cc-name">${esc(p.name)}</div>
+        <div class="cc-specs">${(p.specs||[]).map(s=>`<span class="spec">${esc(s)}</span>`).join('')}</div>
+        <div class="cc-prices">${p.prices.map(pr=>`<div class="cc-row"><span class="cc-sup">${pr.s}</span><span class="cc-price ${pr.p===minP?'low':''}">$${pr.p.toFixed(2)} <span style="font-size:10px;color:var(--muted);font-weight:400">/${esc(p.unit)}</span></span></div>`).join('')}</div>
+        <button class="cc-add" id="ccb-${p.id}" onclick="addBuiltinToEst(${p.id})">+ Ajouter à l'estimation</button>
+      </div>`;
+    }
+  }).join('');
+}
+
+function addCustomToEst(pid){
+  const p=getCustom().find(x=>x.id===pid); if(!p) return;
+  estimate.materials.push({id:uid(),name:p.name,note:(p.specs||[]).join(', '),qty:1,unit:p.unit,price:p.price});
+  renderSec('materials'); updateSummary(); triggerSaveDirect();
+  flash(pid); showToast('✓ '+p.name+' ajouté');
+}
+
+function addBuiltinToEst(pid){
+  const p=BUILT_IN.find(x=>x.id===pid); if(!p) return;
+  const minP=Math.min(...p.prices.map(x=>x.p));
+  const sup=p.prices.find(x=>x.p===minP);
+  estimate.materials.push({id:uid(),name:p.name,note:p.specs.join(', ')+' — '+sup.s,qty:1,unit:p.unit,price:minP});
+  renderSec('materials'); updateSummary(); triggerSaveDirect();
+  flash(pid); showToast('✓ '+p.name+' ajouté');
+}
+
+function flash(pid){
+  const b=document.getElementById('ccb-'+pid); if(!b) return;
+  b.textContent='✓ Ajouté'; b.classList.add('added');
+  setTimeout(()=>{b.textContent="+ Ajouter à l'estimation";b.classList.remove('added');},2000);
+}
+
+// ════════════════════════════
+// SEARCH
+// ════════════════════════════
+function qs(q){document.getElementById('psrchInp').value=q;doSearch();}
+
+function doSearch(){
+  const raw=document.getElementById('psrchInp').value.trim().toLowerCase();
+  if(!raw) return;
+  const el=document.getElementById('psrchRes');
+  let matches=[];
+  for(const key in SEARCH_DB){if(raw.includes(key)||key.split(' ').some(w=>raw.includes(w))) matches.push(...SEARCH_DB[key]);}
+  if(!matches.length){el.innerHTML=`<div class="ph">🔍<br><strong>Aucun résultat pour "${raw}"</strong></div>`;return;}
+  el.innerHTML=matches.map(r=>`
+    <div class="res-card">
+      <div class="rc-hd"><div class="rc-name">${esc(r.name)}</div><span class="rc-src">Prix estimé</span></div>
+      <div class="rc-desc">${esc(r.desc)}</div>
+      <div class="rc-price">$${r.price.toLocaleString('fr-CA',{minimumFractionDigits:2})}</div>
+      <div class="rc-unit">/ ${esc(r.unit)}</div>
+      <div class="rc-note">⚠ ${esc(r.note)}</div>
+      <button class="rc-add" onclick="addSearchRes('${r.name.replace(/'/g,"\\'")}',${r.price},'${r.unit.replace(/'/g,"\\'")}')">+ Ajouter à l'estimation</button>
+    </div>`).join('');
+}
+
+function addSearchRes(name,price,unit){
+  const nl=name.toLowerCase();
+  let sec='materials';
+  if(/puit|fosse|driveway|entrée|excavation/.test(nl)) sec='site';
+  else if(/électricien|plombier|hvac|cvc/.test(nl)) sec='trades';
+  estimate[sec].push({id:uid(),name,note:'Prix estimé — à confirmer',qty:1,unit,price});
+  renderSec(sec); updateSummary(); triggerSaveDirect();
+  switchTab('estimate',document.querySelector('.nav-btn'));
+  document.querySelector('.nav-btn').classList.add('active');
+  showToast('✓ '+name+' ajouté');
+}
+
+// ════════════════════════════
+// EXPORT EXCEL
+// ════════════════════════════
+function exportExcel(){
+  const proj=document.getElementById('projName').value||'Projet';
+  const wb=XLSX.utils.book_new();
+  const rows=[];
+  rows.push([proj]);
+  rows.push(['Estimation de construction — NoblekBuilder']);
+  rows.push(['Date:',new Date().toLocaleDateString('fr-CA')]);
+  rows.push([]);
+  let r=5; const subRefs=[];
+  const DEFS=[{key:'materials',label:'MATÉRIAUX'},{key:'prefab',label:'COMPOSANTES PRÉFAB'},{key:'trades',label:'MÉTIERS & SERVICES'},{key:'site',label:'SERVICES DE SITE'},{key:'subs',label:'SOUS-TRAITANTS'}];
+  DEFS.forEach(def=>{
+    const items=estimate[def.key]; if(!items.length) return;
+    rows.push([def.label]); r++;
+    rows.push(['Item / Description','Note / Spécification','Qté','Unité','Prix unitaire ($)','Total ($)']); r++;
+    const ds=r;
+    items.forEach(item=>{rows.push([item.name,item.note||'',item.qty||0,item.unit||'',item.price||0,{f:`C${r}*E${r}`}]);r++;});
+    rows.push(['','','','','SOUS-TOTAL',{f:`SUM(F${ds}:F${r-1})`}]);
+    subRefs.push(`F${r}`); r++; rows.push([]); r++;
+  });
+  rows.push([]); rows.push(['','','','','TOTAL ESTIMÉ',{f:subRefs.join('+')}]);
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:36},{wch:30},{wch:8},{wch:10},{wch:17},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,ws,'Estimation');
+  XLSX.writeFile(wb,proj.replace(/\s+/g,'-')+'-estimation.xlsx');
+  showToast('✓ Excel exporté');
+}
+
+// ════════════════════════════
+// EXPORT CSV
+// ════════════════════════════
+function exportCSV(){
+  const proj=document.getElementById('projName').value||'Projet';
+  let csv=`Projet: ${proj}\nDate: ${new Date().toLocaleDateString('fr-CA')}\n\n`;
+  let grand=0;
+  SECS.forEach(s=>{
+    const items=estimate[s.key]; if(!items.length) return;
+    const tot=items.reduce((a,i)=>a+(i.qty||0)*(i.price||0),0); grand+=tot;
+    csv+=`\n${s.label.toUpperCase()}\n`;
+    csv+='Item,Note,Qté,Unité,Prix unitaire,Total\n';
+    items.forEach(i=>csv+=`"${i.name}","${i.note||''}",${i.qty},"${i.unit||''}","$${(i.price||0).toFixed(2)}","$${((i.qty||0)*(i.price||0)).toFixed(2)}"\n`);
+    csv+=`,,,,SOUS-TOTAL,"$${tot.toFixed(2)}"\n`;
+  });
+  csv+=`\n\nTOTAL ESTIMÉ,,,,,"$${grand.toFixed(2)}"\n`;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=proj.replace(/\s+/g,'-')+'-estimation.csv';
+  a.click();
+  showToast('✓ CSV exporté');
+}
+
+// ════════════════════════════
+// TOAST
+// ════════════════════════════
+let toastT;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ════════════════════════════
+// KEYBOARD
+// ════════════════════════════
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeItemModal();closeCatModal();closeNewProjModal();}
+  if(e.key==='Enter'){
+    if(document.getElementById('itemModal').classList.contains('open')) saveItem();
+    if(document.getElementById('catModal').classList.contains('open')) saveCatProduct();
+    if(document.getElementById('newProjModal').classList.contains('open')) createNewProject();
+  }
+});
+</script>
+</body>
+</html>
